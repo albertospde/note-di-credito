@@ -671,20 +671,56 @@ function setExpType(n){
 }
 async function loadExpPreview(){
   const soloNew=document.getElementById('chk-solo-new').checked;
-  let q=sb.from('note_credito').select('*').order('data_inserimento');
+  let q=sb.from('note_credito').select('*').order('data_inserimento',{ascending:false});
   if(soloNew)q=q.eq('esportato',false);
   const {data}=await q;
   const rows=data||[];
   const preview=document.getElementById('exp-preview');
   if(rows.length===0){preview.innerHTML='<div class="alert alert-info">Nessuna nota da esportare.</div>';return;}
+
   const totEd=rows.reduce((s,r)=>s+(r.editori||[]).length,0);
   const totImp=rows.reduce((s,r)=>s+(r.editori||[]).reduce((ss,e)=>ss+e.importo,0),0);
-  preview.innerHTML=`<table class="riep-tbl">
+
+  const riepilogo=`<table class="riep-tbl" style="margin-bottom:1rem;">
     <thead><tr><th>Note</th><th>Editori</th><th>Righe Excel</th><th>Importo totale</th></tr></thead>
     <tbody><tr><td>${rows.length}</td><td>${totEd}</td><td>${totEd*2}</td>
     <td style="color:var(--azzurro);font-family:'DM Mono',monospace;font-weight:600;">€ ${totImp.toLocaleString('it-IT',{minimumFractionDigits:2})}</td></tr></tbody>
-  </table>
-  <div class="info-bar">ℹ Ogni editore genera 2 righe. Con ODA: ZSC3/ZSD4 — senza ODA: ZSC2/ZSD2. Mail inclusa nell'export se valorizzata.</div>`;
+  </table>`;
+
+  const dettaglio=rows.map(r=>{
+    const dt=new Date(r.data_inserimento);
+    const dtStr=dt.toLocaleDateString('it-IT')+' '+dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const tot=(r.editori||[]).reduce((s,e)=>s+e.importo,0);
+    const edList=(r.editori||[]).map(e=>`
+      <tr>
+        <td class="hl">${esc(e.nome)}</td>
+        <td>${esc(e.cod_contabile_editore||'')}</td>
+        <td class="imp">€ ${e.importo.toLocaleString('it-IT',{minimumFractionDigits:2})}</td>
+        <td>${esc(e.oda||'—')}</td>
+        <td>${esc(e.mail||'—')}</td>
+      </tr>`).join('');
+    return `<div class="ndc-card">
+      <div class="ndc-card-head">
+        <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;">
+          <span style="font-family:'DM Mono',monospace;font-size:.82rem;color:#fff;font-weight:500;">${esc(r.cod_cliente)}</span>
+          ${r.nota?`<span style="font-size:.75rem;color:var(--testo-dim);">${esc(r.nota)}</span>`:''}
+        </div>
+        <span class="tag-dt">${dtStr}</span>
+      </div>
+      <div class="ndc-card-body">
+        <table class="art-tbl">
+          <thead><tr><th>Editore</th><th>Cod. contabile</th><th>Importo</th><th>ODA</th><th>Mail</th></tr></thead>
+          <tbody>${edList}</tbody>
+          <tfoot><tr><td colspan="2" style="font-size:.7rem;color:var(--testo-sub);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Totale</td>
+          <td class="imp" style="font-weight:700;">€ ${tot.toLocaleString('it-IT',{minimumFractionDigits:2})}</td><td colspan="2"></td></tr></tfoot>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  const infoBar=`<div class="info-bar" style="margin-top:.5rem;">ℹ Con ODA: ZSC3/ZSD4 — senza ODA: ZSC2/ZSD2. Mail inclusa nell'export se valorizzata.</div>`;
+  preview.innerHTML=riepilogo+dettaglio+infoBar;
+}
 }
 async function doExport(){
   const soloNew=document.getElementById('chk-solo-new').checked;
