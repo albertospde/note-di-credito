@@ -85,7 +85,7 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
 .dropdown-item.no-results{color:var(--testo-sub);cursor:default;font-style:italic;font-size:.8rem;}
 .dropdown-item.no-results:hover{background:transparent;color:var(--testo-sub);}
 /* Righe editori */
-.ndc-row{display:grid;grid-template-columns:1fr 100px 28px;gap:.5rem;align-items:end;background:rgba(255,255,255,.025);border:1px solid var(--bordo);border-radius:8px;padding:.65rem .8rem;margin-bottom:.5rem;}
+.ndc-row{display:grid;grid-template-columns:1fr 90px 90px 90px 28px;gap:.5rem;align-items:end;background:rgba(255,255,255,.025);border:1px solid var(--bordo);border-radius:8px;padding:.65rem .8rem;margin-bottom:.5rem;}
 .del-ndc{background:none;border:none;cursor:pointer;color:var(--testo-sub);font-size:1rem;padding:.18rem;border-radius:4px;transition:color .14s;margin-bottom:2px;}
 .del-ndc:hover{color:var(--rosso);}
 .add-ndc-btn{background:none;border:1.5px dashed rgba(0,180,232,.28);border-radius:8px;padding:.6rem;width:100%;text-align:center;cursor:pointer;font-family:inherit;font-size:.8rem;font-weight:600;color:var(--testo-dim);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:.5rem;}
@@ -456,7 +456,7 @@ async function loadEditoriSupabase(){
 // ── FORM ──────────────────────────────────────────────────────────────────────
 function addEditorRow(){
   const id='row_'+(++rowCounter);
-  editorRows.push({id,codice:'',nome:'',cod_contabile:'',importo:''});
+  editorRows.push({id,codice:'',nome:'',cod_contabile:'',importo:'',oda:'',mail:''});
   renderEditorRows();
 }
 function removeEditorRow(id){
@@ -487,6 +487,18 @@ function renderEditorRows(){
         <input type="number" step="0.01" min="0" placeholder="0.00"
           id="imp_${row.id}" value="${row.importo}"
           oninput="updateImporto('${row.id}',this.value)">
+      </div>
+      <div class="field">
+        <label>ODA</label>
+        <input type="text" placeholder="es. 12345"
+          id="oda_${row.id}" value="${esc(row.oda)}"
+          oninput="updateField('${row.id}','oda',this.value)">
+      </div>
+      <div class="field">
+        <label>Mail</label>
+        <input type="email" placeholder="es. ordini@lib.it"
+          id="mail_${row.id}" value="${esc(row.mail)}"
+          oninput="updateField('${row.id}','mail',this.value)">
       </div>
       <button class="del-ndc" title="Rimuovi" onclick="removeEditorRow('${row.id}')">✕</button>
     `;
@@ -545,6 +557,10 @@ function updateImporto(id,val){
   if(row)row.importo=val;
   updateTotale();
 }
+function updateField(id,field,val){
+  const row=editorRows.find(r=>r.id===id);
+  if(row)row[field]=val;
+}
 function updateTotale(){
   const tot=editorRows.reduce((s,r)=>s+(parseFloat(r.importo)||0),0);
   document.getElementById('tot-importo').textContent=tot.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -561,6 +577,8 @@ async function saveNota(){
   // Leggi importi aggiornati dal DOM
   editorRows.forEach(r=>{
     r.importo=document.getElementById('imp_'+r.id)?.value||r.importo;
+    r.oda=document.getElementById('oda_'+r.id)?.value||r.oda;
+    r.mail=document.getElementById('mail_'+r.id)?.value||r.mail;
   });
   const codCliente=document.getElementById('cod-cliente').value.trim();
   const nota=document.getElementById('nota-cliente').value.trim();
@@ -577,7 +595,7 @@ async function saveNota(){
     editori:validi.map(r=>{
       // cod_contabile dell'editore: se non presente costruisce 120+codice
       const cc=r.cod_contabile&&r.cod_contabile!=='nan'?r.cod_contabile:'120'+r.codice;
-      return {codice:r.codice,nome:r.nome,cod_contabile_editore:cc,importo:parseFloat(r.importo)};
+      return {codice:r.codice,nome:r.nome,cod_contabile_editore:cc,importo:parseFloat(r.importo),oda:r.oda||'',mail:r.mail||''};
     })
   };
   const {error}=await sb.from('note_credito').insert(payload);
@@ -666,7 +684,7 @@ async function loadExpPreview(){
     <tbody><tr><td>${rows.length}</td><td>${totEd}</td><td>${totEd*2}</td>
     <td style="color:var(--azzurro);font-family:'DM Mono',monospace;font-weight:600;">€ ${totImp.toLocaleString('it-IT',{minimumFractionDigits:2})}</td></tr></tbody>
   </table>
-  <div class="info-bar">ℹ Ogni editore genera 2 righe: ACCREDITO (ZSC2) e ADDEBITO (ZSD2).</div>`;
+  <div class="info-bar">ℹ Ogni editore genera 2 righe. Con ODA: ZSC3/ZSD4 — senza ODA: ZSC2/ZSD2. Mail inclusa nell'export se valorizzata.</div>`;
 }
 async function doExport(){
   const soloNew=document.getElementById('chk-solo-new').checked;
@@ -675,47 +693,30 @@ async function doExport(){
   const {data,error}=await q;
   if(error||!data?.length){alert('Nessuna nota da esportare.');return;}
 
-  // Intestazioni come nell'Excel originale
-  const headers=['TIPO ORDINE','COD CONTABILE','TIPO ORDINE','MATERIALE','IMPORTO VALORE','DEFINIZIONE','Gruppo Merci','Testi'];
+  // Intestazioni come nell'Excel originale + ODA + Mail
+  const headers=['TIPO ORDINE','COD CONTABILE','TIPO ORDINE','MATERIALE','IMPORTO VALORE','DEFINIZIONE','Gruppo Merci','Testi','ODA','Mail'];
   const exRows=[headers];
 
   data.forEach(nota=>{
     (nota.editori||[]).forEach(editore=>{
       const imp=editore.importo;
-      // COD CONTABILE ADDEBITO = cod_contabile_editore (es. 120A94)
       const codAddebito=editore.cod_contabile_editore||('120'+editore.codice);
-      // Gruppo merci = ultimi caratteri del cod_contabile (es. A94 da 120A94) — oppure vuoto
       const gruppo=codAddebito.replace(/^1[0-9]{2}/,'');
       const nomeEdit=(editore.nome||'').toUpperCase();
       const motivazione=(nota.nota||'NOTA DI CREDITO').toUpperCase();
+      const oda=editore.oda||'';
+      const mail=editore.mail||'';
+      // ZSC3/ZSD4 se ODA presente, altrimenti ZSC2/ZSD2
+      const tipoAcc=oda?'ZSC3':'ZSC2';
+      const tipoAdd=oda?'ZSD4':'ZSD2';
 
-      // Riga ACCREDITO
-      exRows.push([
-        'ZSC2',
-        nota.cod_cliente,        // codice cliente
-        'CAM',
-        'C_XT_L',
-        imp,
-        'ACCREDITO',
-        gruppo,
-        `${nomeEdit} - ${motivazione}`
-      ]);
-      // Riga ADDEBITO
-      exRows.push([
-        'ZSD2',
-        codAddebito,             // 120+codice editore
-        'TVS',
-        'C_TR_L',
-        imp,
-        'ADDEBITO',
-        gruppo,
-        `CLIENTE ${nota.cod_cliente} ${motivazione}`
-      ]);
+      exRows.push([tipoAcc, nota.cod_cliente, 'CAM', 'C_XT_L', imp, 'ACCREDITO', gruppo, `${nomeEdit} - ${motivazione}`, oda||'', mail||'']);
+      exRows.push([tipoAdd, codAddebito,      'TVS', 'C_TR_L', imp, 'ADDEBITO',  gruppo, `CLIENTE ${nota.cod_cliente} ${motivazione}`, oda||'', mail||'']);
     });
   });
 
   const ws=XLSX.utils.aoa_to_sheet(exRows);
-  ws['!cols']=[{wch:14},{wch:18},{wch:14},{wch:12},{wch:16},{wch:14},{wch:14},{wch:60}];
+  ws['!cols']=[{wch:14},{wch:18},{wch:14},{wch:12},{wch:16},{wch:14},{wch:14},{wch:60},{wch:14},{wch:30}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'NOTE CREDITO');
 
