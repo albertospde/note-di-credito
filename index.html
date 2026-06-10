@@ -775,6 +775,9 @@ async function loadExpPreview(){
       </div>
     </div>`;
   }).join('');
+
+  const infoBar='';
+  preview.innerHTML=riepilogo+dettaglio+infoBar;
 }
 async function doExport(){
   const soloNew=document.getElementById('chk-solo-new').checked;
