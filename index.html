@@ -775,9 +775,6 @@ async function loadExpPreview(){
       </div>
     </div>`;
   }).join('');
-
-  const infoBar=`<div class="info-bar" style="margin-top:.5rem;">ℹ Con ODA: ZSC3/ZSD4 — senza ODA: ZSC2/ZSD2. Mail inclusa nell'export se valorizzata.</div>`;
-  preview.innerHTML=riepilogo+dettaglio+infoBar;
 }
 async function doExport(){
   const soloNew=document.getElementById('chk-solo-new').checked;
