@@ -158,8 +158,8 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
     <div class="auth-sub">Note di Credito · Messaggerie</div>
     <div id="auth-alert"></div>
     <input type="email" id="auth-email" placeholder="Email PDE" autocomplete="email">
-    <input type="password" id="auth-pw" placeholder="Password" autocomplete="current-password" id="auth-pw-input">
-    <button class="btn btn-primary" id="btn-login">Accedi</button>
+    <input type="password" id="auth-pw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" onclick="doLogin()" id="btn-login">Accedi</button>
   </div>
 </div>
 
@@ -268,12 +268,6 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const btn = document.getElementById('btn-login');
-  if (btn) btn.addEventListener('click', function() { doLogin(); });
-  const pw = document.getElementById('auth-pw');
-  if (pw) pw.addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
-});
 const SUPABASE_URL='https://tdflwenlylhctxssatax.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZmx3ZW5seWxoY3R4c3NhdGF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzgyNzYsImV4cCI6MjA5MTkxNDI3Nn0.l35qEL7LOvyYuI1McQlVqj4vbyTqmlevcmqWbTGYi2Q';
 const {createClient}=supabase;
@@ -726,7 +720,6 @@ async function loadExpPreview(){
 
   const infoBar=`<div class="info-bar" style="margin-top:.5rem;">ℹ Con ODA: ZSC3/ZSD4 — senza ODA: ZSC2/ZSD2. Mail inclusa nell'export se valorizzata.</div>`;
   preview.innerHTML=riepilogo+dettaglio+infoBar;
-}
 }
 async function doExport(){
   const soloNew=document.getElementById('chk-solo-new').checked;
