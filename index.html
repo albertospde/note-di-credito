@@ -196,6 +196,62 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
         </div>
       </div>
 
+
+      <!-- Mini tabella sedi gruppo -->
+      <div class="form-card" style="margin-bottom:1.3rem;">
+        <div class="fcard-head" style="cursor:pointer;user-select:none;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.toggle-icon').textContent=this.nextElementSibling.style.display==='none'?'▸':'▾';">
+          <span>📋 Sedi amm. Gruppo — Gerarchia codici</span>
+          <span class="toggle-icon" style="font-size:.75rem;color:var(--testo-sub);">▾</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead>
+              <tr style="background:rgba(26,45,107,.4);border-bottom:1px solid var(--bordo);">
+                <th style="text-align:left;padding:.4rem .8rem;font-size:.65rem;color:var(--testo-sub);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Sede amm. Gruppo</th>
+                <th style="text-align:left;padding:.4rem .8rem;font-size:.65rem;color:var(--testo-sub);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Gerarchia</th>
+                <th style="text-align:left;padding:.4rem .8rem;font-size:.65rem;color:var(--testo-sub);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Codice gruppo (2 cifre)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2613700</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">Feltrinelli</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">02</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2613800</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">FL. Village</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">23</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2763000</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">FL. Franchis.</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">77</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2728650</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">IBS/STEREO</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">58</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2610000</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">UBIK</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">83</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2609600</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">Mondadori Retail e direct</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">08</span></td>
+              </tr>
+              <tr>
+                <td style="padding:.38rem .8rem;color:var(--testo);font-family:'DM Mono',monospace;">2592000</td>
+                <td style="padding:.38rem .8rem;color:var(--testo-dim);">Mond. Franchis.</td>
+                <td style="padding:.38rem .8rem;"><span style="background:rgba(0,180,232,.12);color:var(--azzurro);border-radius:4px;padding:.1rem .45rem;font-family:'DM Mono',monospace;font-weight:700;">34</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div class="form-card">
         <div class="fcard-head">
           <span>Editori</span>
@@ -260,7 +316,9 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
           <div class="exp-actions">
             <button class="btn btn-ghost" onclick="loadExpPreview()">↻ Aggiorna anteprima</button>
             <button class="btn btn-accent" onclick="doExport()">⬇ Scarica Excel MELI</button>
+            <a class="btn btn-ghost" href="mailto:gestione.documenti@meli.it?subject=Note%20di%20Credito%20PDE&body=In%20allegato%20il%20file%20Excel%20MELI%20delle%20Note%20di%20Credito.%0A%0ASi%20prega%20di%20allegare%20manualmente%20il%20file%20scaricato." style="text-decoration:none;">✉ Invia Email a MELI</a>
           </div>
+          <p style="font-size:.7rem;color:var(--testo-sub);margin-top:.5rem;">⚠ Dopo aver scaricato il file, clicca "Invia Email" e allegalo manualmente alla mail.</p>
         </div>
       </div>
     </div>
