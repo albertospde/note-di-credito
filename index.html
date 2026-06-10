@@ -799,9 +799,8 @@ async function doExport(){
       const motivazione=(nota.nota||'NOTA DI CREDITO').toUpperCase();
       const oda=editore.oda||'';
       const mail=editore.mail||'';
-      // ZSC3/ZSD4 se ODA presente, altrimenti ZSC2/ZSD2
-      const tipoAcc=oda?'ZSC3':'ZSC2';
-      const tipoAdd=oda?'ZSD4':'ZSD2';
+      const tipoAcc='ZSC3';
+      const tipoAdd='ZSD4';
 
       exRows.push([tipoAcc, nota.cod_cliente, 'CAM', 'C_XT_L', imp, 'ACCREDITO', gruppo, `${nomeEdit} - ${motivazione}`, oda||'', mail||'']);
       exRows.push([tipoAdd, codAddebito,      'TVS', 'C_TR_L', imp, 'ADDEBITO',  gruppo, `CLIENTE ${nota.cod_cliente} ${motivazione}`, oda||'', mail||'']);
