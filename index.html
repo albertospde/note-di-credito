@@ -175,8 +175,8 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
     <!-- TAB NUOVA -->
     <div id="tab-nuova">
       <div class="sec-head">
-        <h1>Nuova Nota di Credito</h1>
-        <p>Inserisci i dati del cliente e gli editori da accreditare</p>
+        <h1 id="form-title">Nuova Nota di Credito</h1>
+        <p id="form-subtitle">Inserisci i dati del cliente e gli editori da accreditare</p>
       </div>
       <div id="form-alert"></div>
       <div class="form-card">
@@ -266,8 +266,8 @@ header{background:rgba(13,22,48,.92);backdrop-filter:blur(12px);border-bottom:1p
             Totale: € <span id="tot-importo">0,00</span>
           </span>
           <div style="display:flex;gap:.6rem;">
-            <button class="btn btn-ghost" onclick="resetForm()">Annulla</button>
-            <button class="btn btn-save" onclick="saveNota()">💾 Salva</button>
+            <button class="btn btn-ghost" onclick="resetForm()" id="btn-annulla">Annulla</button>
+            <button class="btn btn-save" onclick="saveNota()" id="btn-salva">💾 Salva</button>
           </div>
         </div>
       </div>
@@ -335,6 +335,7 @@ let storicoAll=[];
 let expType=12;
 let editorRows=[];
 let rowCounter=0;
+let editingId=null;
 
 // ── EDITORI BUILTIN (dal file Excel) ────────────────────────────────────────
 const EDITORI_BUILTIN=[
@@ -629,6 +630,10 @@ function resetForm(){
   editorRows=[];rowCounter=0;
   addEditorRow();
   document.getElementById('form-alert').innerHTML='';
+  editingId=null;
+  document.getElementById('form-title').textContent='Nuova Nota di Credito';
+  document.getElementById('form-subtitle').textContent='Inserisci i dati del cliente e gli editori da accreditare';
+  document.getElementById('btn-salva').textContent='💾 Salva';
 }
 
 async function saveNota(){
@@ -644,22 +649,59 @@ async function saveNota(){
   const validi=editorRows.filter(r=>r.nome&&parseFloat(r.importo)>0);
   if(validi.length===0){showFormAlert('Aggiungi almeno un editore con importo.','error');return;}
 
+  const editori=validi.map(r=>{
+    // cod_contabile dell'editore: se non presente costruisce 120+codice
+    const cc=r.cod_contabile&&r.cod_contabile!=='nan'?r.cod_contabile:'120'+r.codice;
+    return {codice:r.codice,nome:r.nome,cod_contabile_editore:cc,importo:parseFloat(r.importo),oda:r.oda||'',mail:r.mail||''};
+  });
+
+  if(editingId){
+    // Modalità modifica: aggiorna la nota esistente
+    const {error}=await sb.from('note_credito').update({cod_cliente:codCliente,nota,editori}).eq('id',editingId);
+    if(error){showFormAlert('Errore: '+error.message,'error');return;}
+    showFormAlert('Nota aggiornata!','success');
+    setTimeout(resetForm,1500);
+    loadStorico();
+    return;
+  }
+
   const payload={
     cod_cliente:codCliente,
     nota,
     creato_da:currentUser.email,
     data_inserimento:new Date().toISOString(),
     esportato:false,
-    editori:validi.map(r=>{
-      // cod_contabile dell'editore: se non presente costruisce 120+codice
-      const cc=r.cod_contabile&&r.cod_contabile!=='nan'?r.cod_contabile:'120'+r.codice;
-      return {codice:r.codice,nome:r.nome,cod_contabile_editore:cc,importo:parseFloat(r.importo),oda:r.oda||'',mail:r.mail||''};
-    })
+    editori
   };
   const {error}=await sb.from('note_credito').insert(payload);
   if(error){showFormAlert('Errore: '+error.message,'error');return;}
   showFormAlert('Nota salvata!','success');
   setTimeout(resetForm,1500);
+  loadStorico();
+}
+
+// ── MODIFICA / ELIMINA ──────────────────────────────────────────────────────
+function editNota(id){
+  const r=storicoAll.find(n=>String(n.id)===String(id));
+  if(!r)return;
+  editingId=id;
+  document.getElementById('cod-cliente').value=r.cod_cliente||'';
+  document.getElementById('nota-cliente').value=r.nota||'';
+  editorRows=(r.editori||[]).map(e=>{
+    const id='row_'+(++rowCounter);
+    return {id,codice:e.codice||'',nome:e.nome||'',cod_contabile:e.cod_contabile_editore||'',importo:e.importo??'',oda:e.oda||'',mail:e.mail||''};
+  });
+  if(editorRows.length===0)addEditorRow();else renderEditorRows();
+  document.getElementById('form-title').textContent='Modifica Nota di Credito';
+  document.getElementById('form-subtitle').textContent='Stai modificando una nota esistente';
+  document.getElementById('btn-salva').textContent='💾 Aggiorna';
+  document.querySelector('.tab-btn').click(); // torna al tab "Nuova Nota"
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function deleteNota(id){
+  if(!confirm('Eliminare definitivamente questa nota di credito? L\'operazione non è reversibile.'))return;
+  const {error}=await sb.from('note_credito').delete().eq('id',id);
+  if(error){alert('Errore durante l\'eliminazione: '+error.message);return;}
   loadStorico();
 }
 function showFormAlert(msg,type){
@@ -706,6 +748,8 @@ function renderStorico(rows){
         <div style="display:flex;align-items:center;gap:.4rem;">
           <span class="tag ${r.esportato?'tag-exp':'tag-pend'}">${r.esportato?'Esportata':'Da esportare'}</span>
           <span class="tag-dt">${dtStr}</span>
+          <button class="btn btn-ghost" style="padding:.28rem .55rem;font-size:.72rem;" title="Modifica" onclick="editNota('${r.id}')">✏️</button>
+          <button class="btn btn-ghost" style="padding:.28rem .55rem;font-size:.72rem;" title="Elimina" onclick="deleteNota('${r.id}')">🗑</button>
         </div>
       </div>
       <div class="ndc-card-body">
